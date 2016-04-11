@@ -14,6 +14,7 @@ CONFIG = configparser.ConfigParser()
 CONFIG.read(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.ini'))
 
 SMS_API_URL = 'https://api.smsapi.pl/sms.do'
+TELEGRAM_API_URL = 'https://api.telegram.org/bot%s/sendMessage'
 
 
 def get_queue_size(mailq_output):
@@ -37,20 +38,44 @@ def prepare_message(queue_size, mailq_output):
 
 
 def send_sms(message):
-    post_data = {'message': message}
-    for k, v in CONFIG.items('smsapi'):
-        post_data[k] = v
+    post_data = {}
+    request = ''
+    if 'smsapi' in CONFIG:
+        post_data = {'message': message}
+        for k, v in CONFIG.items('smsapi'):
+            post_data[k] = v
+        request = urllib.request.Request(SMS_API_URL, urllib.parse.urlencode(post_data).encode('utf-8'))
+    elif 'telegramapi' in CONFIG:
+        token = CONFIG.get('telegramapi', 'token')
+        post_data = {
+            'text' : message,
+            'chat_id' : CONFIG.get('telegramapi', 'chat_id')
+        }
+        request = urllib.request.Request(TELEGRAM_API_URL % token, urllib.parse.urlencode(post_data).encode('utf-8'))
+    else:
+        raise Exception('Invalid config. Please define a SMS or TELEGRAM API')
 
-    request = urllib.request.Request(SMS_API_URL, urllib.parse.urlencode(post_data).encode('utf-8'))
     response = urllib.request.urlopen(request)
     response.read()
 
 
 if __name__ == "__main__":
+
     if len(sys.argv) > 1 and sys.argv[1] == '--test-sms':
         print("Testing SMS.")
         send_sms("Test SMS from Postfix queue monitor.")
         sys.exit(0)
+
+    shutdown_postfix = ''
+    if 'systemctl' in local:
+        shutdown_postfix = local['systemctl']['stop']['postfix.service']
+    elif 'service' in local:
+        shutdown_postfix = local['service']['postfix']['stop']
+    else:
+        raise Exception('Service manager (systemctl or service) not found!')
+
+    if 'mailq' not in local:
+        raise Exception('This script needs mailq')
 
     mailq_output = local['mailq']()
     queue_size = get_queue_size(mailq_output)
@@ -58,11 +83,12 @@ if __name__ == "__main__":
     if queue_size < CONFIG.getint('threshold', 'warning'):
         sys.exit(0)
     elif queue_size < CONFIG.getint('threshold', 'shutdown'):
-        print("There are %d messages in Postfix queue." % queue_size)
-        print("Mail queue dump:\n%s" % mailq_output)
+        msg = "There are %d messages in Postfix queue." % queue_size
+        msg += "Mail queue dump:\n%s" % mailq_output
+        print(msg)
+        send_sms(msg)
         sys.exit(1)
     else:
-        shutdown_postfix = local['service']['postfix']['stop']
         shutdown_postfix()
 
         subject, msg = prepare_message(queue_size, mailq_output)
