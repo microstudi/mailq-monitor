@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1 and sys.argv[1] == '--test-sms':
         print("Testing SMS.")
-        send_sms("Test SMS from Postfix queue monitor.")
+        send_sms("Test SMS from Postfix queue monitor on %s." % socket.gethostname())
         sys.exit(0)
 
     shutdown_postfix = ''
@@ -83,8 +83,8 @@ if __name__ == "__main__":
     if queue_size < CONFIG.getint('threshold', 'warning'):
         sys.exit(0)
     elif queue_size < CONFIG.getint('threshold', 'shutdown'):
-        msg = "There are %d messages in Postfix queue." % queue_size
-        msg += "Mail queue dump:\n%s" % mailq_output
+        msg = "There are %d messages in Postfix queue on %s." % (queue_size, socket.gethostname())
+        msg += "\nMail queue dump:\n%s" % mailq_output
         print(msg)
         send_sms(msg)
         sys.exit(1)
