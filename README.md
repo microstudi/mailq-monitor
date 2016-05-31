@@ -28,6 +28,12 @@ Postfix is shutdown and SMS or Telegram message will be sent
 apt-get install python3-plumbum
 ```
 
+or use easy_install3 if the package is not available:
+
+```bash
+easy_install3 plumbum
+```
+
 ### Clone repository and edit config file:
 
 ```bash
@@ -68,7 +74,7 @@ Obtain the chat-id from the response like this:
           "username": "bobmarley"
         },
         "chat": {
-          "id": 424242,
+          "id": -424242,
           "first_name": "Bob",
           "last_name": "Marley",
           "username": "bobmarley",
@@ -90,7 +96,7 @@ Obtain the chat-id from the response like this:
 
 ```
 
-In this case the **chat-id** will be **424242**
+In this case the **chat-id** will be **-424242**
 
 ```
 [telegramapi]
@@ -103,6 +109,12 @@ chat_id=XXXXX
 
 ```
 * * * * * /root/mailq-monitor/mailq_check.py
+```
+
+or create a file directly in `/etc/cron.d/mailq-monitor`:
+
+```
+* * * * * root /root/mailq-monitor/mailq_check.py
 ```
 
 ## Testing
