@@ -1,5 +1,7 @@
 # Postfix queue monitor
 
+> This mod adds the ability to use [Telegram](https://telegram.org) to send messages instead of SMS.
+
 If you host several Wordpress websites, there's a great deal of possibility
 that one of them might be compromised and become a SPAM sender. SPAM is usually
 rejected by the recipients so queue gets longer and longer. The script
@@ -29,7 +31,7 @@ apt-get install python3-plumbum
 ### Clone repository and edit config file:
 
 ```bash
-git clone https://github.com/1connect/mailq-monitor.git
+git clone https://github.com/microstudi/mailq-monitor.git
 cd mailq-monitor
 cp example.config.ini config.ini
 ```
